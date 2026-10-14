@@ -100,6 +100,10 @@ def get_balance(sb):
 
 sb = get_supabase()
 
+# Ganti key uploader setelah klaim sukses agar screenshot langsung dikosongkan.
+if "upload_version" not in st.session_state:
+    st.session_state.upload_version = 0
+
 st.title("🪙 HobbyFund")
 st.caption("Produktif dulu, baru reward buat hobi. Tarif dasar: Rp5.000 per jam produktif.")
 
@@ -129,7 +133,11 @@ tab_claim, tab_spend, tab_history, tab_settings = st.tabs(
 with tab_claim:
     st.subheader("Klaim aktivitas produktif")
     st.write("Upload screenshot timer, Strava, atau aplikasi aktivitas. OCR akan mencoba membaca durasi; cek hasilnya sebelum mengonfirmasi.")
-    uploaded = st.file_uploader("Screenshot bukti aktivitas", type=["png", "jpg", "jpeg", "webp"], key="proof")
+    uploaded = st.file_uploader(
+        "Screenshot bukti aktivitas",
+        type=["png", "jpg", "jpeg", "webp"],
+        key=f"proof_{st.session_state.upload_version}",
+    )
     if uploaded:
         image_bytes = uploaded.getvalue()
         digest = hashlib.sha256(image_bytes).hexdigest()
@@ -181,6 +189,7 @@ with tab_claim:
                         "screenshot_hash": digest,
                         "ocr_text": ocr_text[:5000] if ocr_text else None,
                     }).execute()
+                    st.session_state.upload_version += 1
                     st.success(f"Berhasil! {money(reward)} ditambahkan ke saldo reward.")
                     st.rerun()
                 except Exception as exc:
